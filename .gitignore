@@ -9,7 +9,7 @@ Builds/
 Temp/
 Obj/
 UnityGenerated/
-Library/
+/Library/
 CompilationCompleted.txt
 CurrentLayout.dwlt
  
