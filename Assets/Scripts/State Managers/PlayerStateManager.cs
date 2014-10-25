@@ -1,10 +1,15 @@
 ﻿using UnityEngine;
 using System.Collections;
+using InControl;
 
 public class PlayerStateManager : MonoBehaviour
 {
 	public SimpleStateMachine stateMachine;
 	public SimpleState setupState;
+	public InputDevice device;
+	public InputController input;
+	public int playerNum = -1;
+	public int actualPlayerNum;
 
 	public virtual void Start ()
 	{
@@ -42,4 +47,29 @@ public class PlayerStateManager : MonoBehaviour
 		
 	}
 	#endregion
+
+	public void AssignPlayer() {
+		if (playerNum > -1) {
+			actualPlayerNum = FindActualPlayerNum();
+			device = InputManager.Devices[actualPlayerNum];
+		}
+		
+	}
+
+	public int FindActualPlayerNum() {
+		int i = 0;
+		int found = 0;
+		while (i < InputManager.Devices.Count) {
+			if ((InputManager.Devices[i] as UnityInputDevice).Profile.IsKnown) {
+				if (found == playerNum) {
+					return i;
+				}
+
+				found++;
+			}
+			i++;
+		}
+
+		return -1;
+	}
 }

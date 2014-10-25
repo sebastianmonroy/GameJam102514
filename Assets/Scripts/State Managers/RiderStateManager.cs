@@ -7,7 +7,7 @@ public class RiderStateManager : PlayerStateManager
 
 	public float rideSpeed, jumpSpeed;
 
-	private Vector3 jumpDirection;
+	private Vector3 jumpDirection, circleCenter, riderToCenter;
 
 	public override void Start()
 	{
@@ -22,6 +22,9 @@ public class RiderStateManager : PlayerStateManager
 
 	public override void Update ()
 	{
+		circleCenter = MainStateManager.instance.CIRCLE_CENTER;
+		riderToCenter = circleCenter - this.transform.position;
+
 		Execute();
 	}
 
@@ -32,6 +35,7 @@ public class RiderStateManager : PlayerStateManager
 
 	public override void Setup () 
 	{
+		AssignPlayer();
 		stateMachine.SwitchStates(setupState);
 	}
 
@@ -65,16 +69,26 @@ public class RiderStateManager : PlayerStateManager
 	}
 		void RideInput ()
 		{
-			if (Input.GetKeyUp("space")) 
-			{
-				stateMachine.SwitchStates(jumpState);
-				jumpDirection = (MainStateManager.instance.CIRCLE_CENTER - this.transform.position).normalized;
-			}
+			Aim();
 		}
 
 		void Ride ()
 		{
 			this.transform.RotateAround(Vector3.zero, Vector3.forward, -rideSpeed * Time.deltaTime);
+		}
+
+		void Aim ()
+		{
+			Vector3 aimVector = new Vector3(input.LeftStick.x, input.LeftStick.y, 0f);
+			if (aimVector.magnitude >= 0.3f && Vector3.Dot(aimVector.normalized, riderToCenter.normalized) > 0.4f)
+			{
+				Debug.DrawLine(this.transform.position, this.transform.position +  aimVector * 5f, Color.red);
+				if (input.AButton) 
+				{
+					jumpDirection = aimVector.normalized;
+					stateMachine.SwitchStates(jumpState);
+				}
+			}
 		}
 
 	void RideExit ()
@@ -102,11 +116,9 @@ public class RiderStateManager : PlayerStateManager
 
 		void CircleDetection ()
 		{
-			Vector3 circleCenter = MainStateManager.instance.CIRCLE_CENTER;
-			Vector3 riderToCenter = circleCenter - this.transform.position;
 			float distanceFromCenter = riderToCenter.magnitude;
 			float circleRadius = MainStateManager.instance.CIRCLE_RADIUS;
-			
+			Debug.Log(distanceFromCenter);
 			if (distanceFromCenter >= circleRadius)
 			{
 				this.transform.position = circleCenter - riderToCenter.normalized * circleRadius;
@@ -116,8 +128,17 @@ public class RiderStateManager : PlayerStateManager
 
 	void JumpExit ()
 	{
-
+		Debug.Log(GetJumpAngle());
 	}
+		public float GetJumpAngle() {
+			Vector3 a = riderToCenter.normalized;
+			Vector3 b = jumpDirection;
+			Vector3 n = Vector3.forward;
+			float sign = (Vector3.Dot(Vector3.Cross(a,b), n) > 0) ? -1 : 1;
+			float angle = Vector3.Angle(a,b);
+
+			return sign * angle;
+		}
 	#endregion
 	
 	#region DEATH
