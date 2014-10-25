@@ -6,9 +6,9 @@ Builds/
 # =============== #
 # Unity generated #
 # =============== #
-Temp/
-Obj/
-UnityGenerated/
+/Temp/
+/Obj/
+/UnityGenerated/
 /Library/
 CompilationCompleted.txt
 CurrentLayout.dwlt
