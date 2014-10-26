@@ -97,7 +97,7 @@ public class RiderStateManager : PlayerStateManager
 			}
 			else if (stateMachine.currentState == "RIDE" && otherRider.stateMachine.currentState == "JUMP")
 			{
-				speed += (otherRider.jumpSpeed + Mathf.Abs(otherRider.speed))*2f * Vector3.Dot(-collisionNormal, this.tangent);
+				speed += (otherRider.jumpSpeed + Mathf.Abs(otherRider.speed))*2f * Vector3.Dot(-collisionNormal, this.tangent) * Vector3.Dot(otherRider.jumpDirection, this.tangent);
 			}
 
 			// only one player handles the speed and killing stuff
@@ -109,9 +109,12 @@ public class RiderStateManager : PlayerStateManager
 				Debug.Log("bump");
 			}
 
-			float tempSpeed = speed;
-			speed = otherRider.speed;
-			otherRider.speed = tempSpeed;
+			if (!otherRider.hitPlayers.Contains(this))
+			{
+				float tempSpeed = speed;
+				speed = otherRider.speed;
+				otherRider.speed = tempSpeed;
+			}
 		}
 
 		bool OtherHasSimilarSpeed(RiderStateManager other) 
