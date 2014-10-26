@@ -65,7 +65,7 @@ public class RiderStateManager : PlayerStateManager
 			{
 				if (otherRider != this && otherRider.isAlive) 
 				{
-					if (Vector3.Distance(this.transform.position, otherRider.transform.position) <= this.transform.localScale.x/2f + otherRider.transform.localScale.x/2f)
+					if (Vector3.Distance(this.transform.position, otherRider.transform.position) <= this.transform.lossyScale.x/4f + otherRider.transform.lossyScale.x/4f)
 					{
 						if (!hitPlayers.Contains(otherRider)) 
 						{
@@ -88,16 +88,16 @@ public class RiderStateManager : PlayerStateManager
 			RiderStateManager otherRider =  hitPlayers[hitPlayerIndex];
 
 			// both players handle reflection
-			Vector3 collisionNormal = (hitPlayers[hitPlayerIndex].transform.position - this.transform.position).normalized;
-			jumpDirection = jumpDirection - 2*(Vector3.Dot(jumpDirection, collisionNormal)) * collisionNormal;
-			jumpDirection = hitPlayers[hitPlayerIndex].jumpDirection;
+			Vector3 collisionNormal = (this.transform.position - otherRider.transform.position).normalized;
+			jumpDirection = jumpDirection - 2f * (Vector3.Dot(jumpDirection, collisionNormal)) * collisionNormal;
+			//jumpDirection = hitPlayers[hitPlayerIndex].jumpDirection;
 
 			if (Mathf.Abs(speed) > Mathf.Abs(otherRider.speed)) 
 			{
 				// only one player handles the speed and killing stuff
 				if (Mathf.Abs(speed) > killSpeedThreshold && !OtherHasSimilarSpeed(otherRider))
 				{
-					Debug.Log("high speed collision, kill player " + hitPlayers[hitPlayerIndex].playerNum);
+					Debug.Log("high speed collision, kill player " + otherRider.playerNum);
 					hitPlayers[hitPlayerIndex].Kill();
 				}
 
