@@ -69,8 +69,8 @@ public class RiderStateManager : PlayerStateManager
 
 	void RideUpdate () 
 	{
-		RideInput();
 		Ride();
+		RideInput();
 	}
 		void RideInput ()
 		{
@@ -105,7 +105,8 @@ public class RiderStateManager : PlayerStateManager
 	#region JUMP
 	void JumpEnter ()
 	{	
-		speed = Mathf.Sign(GetJumpAngle()) * Mathf.Abs(speed);
+		Debug.Log(Vector3.Dot(tangent, jumpDirection));
+		speed = Mathf.Sign(Vector3.Dot(tangent, jumpDirection)) * speed;
 		speed += 0.2f * speed;
 	}
 
