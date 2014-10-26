@@ -52,6 +52,7 @@ public class PlayerStateManager : MonoBehaviour
 		if (playerNum > -1) {
 			actualPlayerNum = FindActualPlayerNum();
 			device = InputManager.Devices[playerNum];
+			Debug.Log((device as UnityInputDevice).Profile);
 		}
 		
 	}
