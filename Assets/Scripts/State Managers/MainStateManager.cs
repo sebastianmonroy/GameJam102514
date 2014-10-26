@@ -87,10 +87,18 @@ public class MainStateManager : MonoBehaviour {
 
 	void GameUpdate() 
 	{
+		List<int> killIndices = new List<int>();
 		for (int i = 0; i < playerStateManagers.Count; i++)
 		{
 			playerStateManagers[i].Execute();
 			subStateNames[i] = playerStateManagers[i].stateMachine.currentState;
+			if (subStateNames[i] == "FINISHED") {
+				killIndices.Add(i);
+			}
+		}
+
+		if (killIndices.Count > 0) {
+			playerStateManagers.RemoveAt(killIndices[0]);
 		}
 	}
 
