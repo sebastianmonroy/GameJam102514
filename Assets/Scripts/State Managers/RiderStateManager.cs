@@ -6,6 +6,7 @@ public class RiderStateManager : PlayerStateManager
 	public SimpleState rideState, jumpState, deathState, finishedState;
 
 	public float minSpeed, defaultSpeed, maxSpeed;
+	public float jumpSpeed;
 	private float radialSpeed, speed;
 
 	private Vector3 jumpDirection, center, normal, tangent;
@@ -105,14 +106,14 @@ public class RiderStateManager : PlayerStateManager
 	#region JUMP
 	void JumpEnter ()
 	{	
-		Debug.Log(Vector3.Dot(tangent, jumpDirection));
-		speed = Mathf.Sign(Vector3.Dot(tangent, jumpDirection)) * speed;
-		speed += 0.2f * speed;
+		float sign = Mathf.Sign(Vector3.Dot(tangent, jumpDirection));
+		float factor = (1f + Vector3.Dot(tangent, jumpDirection))/2f;
+		speed = sign * factor * speed * 1.5f;
 	}
 
 	void JumpUpdate () 
 	{
-		this.transform.position += Mathf.Abs(speed) * jumpDirection * Time.deltaTime;
+		this.transform.position += (Mathf.Abs(speed) + jumpSpeed) * jumpDirection * Time.deltaTime;
 		CircleDetection();
 		JumpInput();
 	}
@@ -124,29 +125,23 @@ public class RiderStateManager : PlayerStateManager
 		void CircleDetection ()
 		{
 			float distanceFromCenter = Vector3.Distance(this.transform.position, center);
-			float circleRadius = MainStateManager.instance.CIRCLE_RADIUS;
 
-			if (distanceFromCenter >= circleRadius)
+			if (distanceFromCenter >= MainStateManager.instance.CIRCLE_RADIUS)
 			{
-				this.transform.position = center - normal * circleRadius;
+				SnapToCircle();
 				stateMachine.SwitchStates(rideState);
 			}
 		}
 
 	void JumpExit ()
 	{
-		//speed = speed * Vector3.Dot(tangent, )
+		speed = (speed + Mathf.Sign(speed) * jumpSpeed) * Mathf.Abs(Vector3.Dot(tangent, jumpDirection));
 	}
-		float GetJumpAngle() 
+		void SnapToCircle ()
 		{
-			Vector3 a = normal;
-			Vector3 b = jumpDirection;
-			Vector3 n = Vector3.forward;
-			float sign = (Vector3.Dot(Vector3.Cross(a,b), n) > 0) ? 1 : -1;
-			float angle = Vector3.Angle(a,b);
-
-			return sign * angle;
+			this.transform.position = center - normal * MainStateManager.instance.CIRCLE_RADIUS;
 		}
+
 	#endregion
 	
 	#region DEATH
