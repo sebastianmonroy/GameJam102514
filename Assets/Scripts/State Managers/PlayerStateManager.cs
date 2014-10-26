@@ -51,7 +51,7 @@ public class PlayerStateManager : MonoBehaviour
 	public void AssignPlayer() {
 		if (playerNum > -1) {
 			actualPlayerNum = FindActualPlayerNum();
-			device = InputManager.Devices[actualPlayerNum];
+			device = InputManager.Devices[playerNum];
 		}
 		
 	}

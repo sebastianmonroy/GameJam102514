@@ -79,10 +79,7 @@ public class MainStateManager : MonoBehaviour {
 	#region GAME
 	void GameEnter() 
 	{
-		for (int i = 0; i < playerStateManagers.Count; i++)
-		{
-			playerStateManagers[i].Setup();
-		}
+		
 	}
 
 	void GameUpdate() 
