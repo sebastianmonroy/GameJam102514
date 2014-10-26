@@ -92,7 +92,7 @@ public class MainStateManager : MonoBehaviour {
 		{
 			playerStateManagers[i].Execute();
 			subStateNames[i] = playerStateManagers[i].stateMachine.currentState;
-			if (!playerStateManagers[i].isAlive) {
+			if (playerStateManagers[i].stateMachine.currentState == "FINISHED") {
 				killIndex = i;
 			}
 		}

@@ -12,7 +12,7 @@ public class RiderStateManager : PlayerStateManager
 	public float radialSpeed, speed;
 	public float killSpeedThreshold;
 
-	private Vector3 jumpDirection, center, normal, tangent;
+	public Vector3 jumpDirection, center, normal, tangent;
 
 	public MeshFilter triangleMesh;
 	public Vector3[] triangleVerts = new Vector3[3] { Vector3.zero, Vector3.zero, Vector3.zero };
@@ -21,6 +21,9 @@ public class RiderStateManager : PlayerStateManager
 	public int triangleIndex;
 
 	public List<RiderStateManager> hitPlayers = new List<RiderStateManager>();
+
+	public ARLTimer timer;
+	public Vector3 defaultScale;
 
 	public override void Start()
 	{
@@ -36,6 +39,7 @@ public class RiderStateManager : PlayerStateManager
 		AssignPlayer();
 		speed = defaultSpeed;
 		stateMachine.SwitchStates(setupState);
+		defaultScale = this.transform.localScale;
 	}
 
 	public override void Update ()
@@ -61,7 +65,7 @@ public class RiderStateManager : PlayerStateManager
 			{
 				if (otherRider != this && otherRider.isAlive) 
 				{
-					if (this.GetComponent<CircleCollider2D>().OverlapPoint(otherRider.transform.position))
+					if (Vector3.Distance(this.transform.position, otherRider.transform.position) <= this.transform.localScale.x/2f + otherRider.transform.localScale.x/2f)
 					{
 						if (!hitPlayers.Contains(otherRider)) 
 						{
@@ -81,19 +85,25 @@ public class RiderStateManager : PlayerStateManager
 		}
 
 		void CheckRiderHit(int hitPlayerIndex) {
-			float otherSpeed = hitPlayers[hitPlayerIndex].speed;
-			if (Mathf.Abs(speed) > killSpeedThreshold)
+			RiderStateManager otherRider =  hitPlayers[hitPlayerIndex];
+
+			// both players handle reflection
+			Vector3 collisionNormal = (hitPlayers[hitPlayerIndex].transform.position - this.transform.position).normalized;
+			jumpDirection = jumpDirection - 2*(Vector3.Dot(jumpDirection, collisionNormal)) * collisionNormal;
+			jumpDirection = hitPlayers[hitPlayerIndex].jumpDirection;
+
+			if (Mathf.Abs(speed) > Mathf.Abs(otherRider.speed)) 
 			{
-				if (OtherHasSimilarSpeed(hitPlayers[hitPlayerIndex])) 
-				{
-					// bounce off other dude
-					Debug.Log("bounce");
-				}
-				else if (Mathf.Abs(speed) > Mathf.Abs(otherSpeed))
+				// only one player handles the speed and killing stuff
+				if (Mathf.Abs(speed) > killSpeedThreshold && !OtherHasSimilarSpeed(otherRider))
 				{
 					Debug.Log("high speed collision, kill player " + hitPlayers[hitPlayerIndex].playerNum);
 					hitPlayers[hitPlayerIndex].Kill();
 				}
+
+				float tempSpeed = speed;
+				speed = otherRider.speed;
+				otherRider.speed = tempSpeed;
 			}
 		}
 
@@ -230,7 +240,9 @@ public class RiderStateManager : PlayerStateManager
 	void JumpExit ()
 	{
 		speed = (speed + Mathf.Sign(speed) * jumpSpeed) * Mathf.Abs(Vector3.Dot(tangent, jumpDirection));
-		if (triangleIndex == 0) 
+		float sign = Mathf.Sign(Vector3.Dot(tangent, jumpDirection));
+		speed = sign * speed;
+		/*if (triangleIndex == 0) 
 		{
 			triangleVerts[triangleIndex] = this.transform.position;
 			triangleIndex = 1;
@@ -243,7 +255,7 @@ public class RiderStateManager : PlayerStateManager
 		{
 			KillInTriangle();
 			triangleIndex = 0;
-		}
+		}*/
 	}
 		void KillInTriangle() 
 		{
@@ -274,21 +286,31 @@ public class RiderStateManager : PlayerStateManager
 	#region DEATH
 	void DeathEnter ()
 	{
-		Debug.Log("Player " + playerNum + " died");
+		Debug.Log("Player " + playerNum + " dying");
 		hitPlayers.Clear();
 		allowRide = false;
 		speed = 0f;
+		isAlive = false;
+
+		timer = new ARLTimer(1f);
 	}
 
 	void DeathUpdate () 
 	{
-		isAlive = false;
-		stateMachine.SwitchStates(finishedState);
+		this.transform.localScale = Vector3.Lerp(defaultScale, defaultScale*50f, timer.PercentDone());
+		Color oldColor = this.GetComponent<SpriteRenderer>().color;
+		float newAlpha = Mathf.Lerp(1f, 0f, timer.PercentDone());
+		oldColor.a = newAlpha;
+		this.GetComponent<SpriteRenderer>().color = oldColor;
+		if (timer.IsDone())
+		{
+			stateMachine.SwitchStates(finishedState);
+		}
 	}
 
 	void DeathExit ()
 	{
-
+		Debug.Log("Player " + playerNum + " died");
 	}
 	#endregion
 }
