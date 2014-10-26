@@ -67,7 +67,7 @@ public class RiderStateManager : PlayerStateManager
 				{
 					if (Vector3.Distance(this.transform.position, otherRider.transform.position) <= this.transform.lossyScale.x/4f + otherRider.transform.lossyScale.x/4f)
 					{
-						if (!hitPlayers.Contains(otherRider)) 
+						if (!hitPlayers.Contains(otherRider) && (Mathf.Abs(speed) > Mathf.Abs(otherRider.speed))) 
 						{
 							hitPlayers.Add(otherRider);
 							CheckRiderHit(hitPlayers.Count-1);
@@ -90,21 +90,28 @@ public class RiderStateManager : PlayerStateManager
 			// both players handle reflection
 			Vector3 collisionNormal = (this.transform.position - otherRider.transform.position).normalized;
 			jumpDirection = jumpDirection - 2f * (Vector3.Dot(jumpDirection, collisionNormal)) * collisionNormal;
-			//jumpDirection = hitPlayers[hitPlayerIndex].jumpDirection;
 
-			if (Mathf.Abs(speed) > Mathf.Abs(otherRider.speed)) 
+			if (stateMachine.currentState == "JUMP" && otherRider.stateMachine.currentState == "RIDE") 
 			{
-				// only one player handles the speed and killing stuff
-				if (Mathf.Abs(speed) > killSpeedThreshold && !OtherHasSimilarSpeed(otherRider))
-				{
-					Debug.Log("high speed collision, kill player " + otherRider.playerNum);
-					hitPlayers[hitPlayerIndex].Kill();
-				}
-
-				float tempSpeed = speed;
-				speed = otherRider.speed;
-				otherRider.speed = tempSpeed;
+				
 			}
+			else if (stateMachine.currentState == "RIDE" && otherRider.stateMachine.currentState == "JUMP")
+			{
+				speed += (otherRider.jumpSpeed + Mathf.Abs(otherRider.speed))*2f * Vector3.Dot(-collisionNormal, this.tangent);
+			}
+
+			// only one player handles the speed and killing stuff
+			if (Mathf.Abs(speed) > killSpeedThreshold && !OtherHasSimilarSpeed(otherRider))
+			{
+				Debug.Log("high speed collision, kill player " + otherRider.playerNum);
+				hitPlayers[hitPlayerIndex].Kill();
+			} else {
+				Debug.Log("bump");
+			}
+
+			float tempSpeed = speed;
+			speed = otherRider.speed;
+			otherRider.speed = tempSpeed;
 		}
 
 		bool OtherHasSimilarSpeed(RiderStateManager other) 
@@ -180,7 +187,7 @@ public class RiderStateManager : PlayerStateManager
 		void Aim ()
 		{
 			Vector3 aimVector = new Vector3(input.LeftStick.x, input.LeftStick.y, 0f);
-			if (aimVector.magnitude >= 0.3f && Vector3.Dot(aimVector.normalized, normal) > 0.4f)
+			if (aimVector.magnitude >= 0.3f && Vector3.Dot(aimVector.normalized, normal) > 0.2f)
 			{
 				jumpDirection = aimVector.normalized;
 				Debug.DrawLine(this.transform.position, this.transform.position + aimVector * 5f, Color.red);
@@ -207,7 +214,7 @@ public class RiderStateManager : PlayerStateManager
 
 	void JumpUpdate () 
 	{
-		this.transform.position += (Mathf.Abs(speed) + jumpSpeed) * 4f * jumpDirection * Time.deltaTime;
+		this.transform.position += (Mathf.Abs(speed) + jumpSpeed) * 2f * jumpDirection * Time.deltaTime;
 		CircleDetection();
 		JumpInput();
 
