@@ -48,10 +48,8 @@ public class RiderStateManager : PlayerStateManager
 		this.transform.rotation = Quaternion.LookRotation(-Mathf.Sign(speed) * Vector3.forward, normal);
 		tangent = this.transform.right;
 
-		if (stateMachine.currentState != "FINISHED") {
+		if (isAlive) {
 			DetectRiderHits();
-
-			CheckRiderHits();
 
 			DrawDebugTriangle();
 		}
@@ -59,40 +57,50 @@ public class RiderStateManager : PlayerStateManager
 		Execute();
 	}
 		void DetectRiderHits() {
-			foreach (RiderStateManager otherRider in MainStateManager.instance.playerStateManagers) {
-				if (otherRider != this && otherRider.stateMachine.currentState != "FINISHED") {
-					if (this.GetComponent<CircleCollider2D>().OverlapPoint(otherRider.transform.position)) {
-						hitPlayers.Add(otherRider);
+			foreach (RiderStateManager otherRider in MainStateManager.instance.playerStateManagers) 
+			{
+				if (otherRider != this && otherRider.isAlive) 
+				{
+					if (this.GetComponent<CircleCollider2D>().OverlapPoint(otherRider.transform.position))
+					{
+						if (!hitPlayers.Contains(otherRider)) 
+						{
+							hitPlayers.Add(otherRider);
+							CheckRiderHit(hitPlayers.Count-1);
+						} 
+					} 
+					else 
+					{
+						if (hitPlayers.Contains(otherRider)) 
+						{
+							hitPlayers.Remove(otherRider);
+						}
 					}
 				}
 			}
 		}
 
-		void CheckRiderHits() {
-			while (hitPlayers.Count > 0) 
+		void CheckRiderHit(int hitPlayerIndex) {
+			float otherSpeed = hitPlayers[hitPlayerIndex].speed;
+			if (Mathf.Abs(speed) > killSpeedThreshold)
 			{
-				float otherSpeed = hitPlayers[0].speed;
-				if (Mathf.Abs(speed) > killSpeedThreshold)
+				if (OtherHasSimilarSpeed(hitPlayers[hitPlayerIndex])) 
 				{
-					if (OtherHasSimilarSpeed(hitPlayers[0])) 
-					{
-						// bounce off other dude
-						Debug.Log("bounce");
-					}
-					else if (Mathf.Abs(speed) > Mathf.Abs(otherSpeed))
-					{
-						Debug.Log("high speed collision");
-						hitPlayers[0].stateMachine.SwitchStates(deathState);
-					}
+					// bounce off other dude
+					Debug.Log("bounce");
 				}
-				hitPlayers.RemoveAt(0);
+				else if (Mathf.Abs(speed) > Mathf.Abs(otherSpeed))
+				{
+					Debug.Log("high speed collision, kill player " + hitPlayers[hitPlayerIndex].playerNum);
+					hitPlayers[hitPlayerIndex].Kill();
+				}
 			}
 		}
 
 		bool OtherHasSimilarSpeed(RiderStateManager other) 
 		{
 			float otherSpeed = other.speed;
-			return Mathf.Abs(Mathf.Abs(speed) - Mathf.Abs(otherSpeed)) <= killSpeedThreshold;
+			return Mathf.Abs(speed - otherSpeed) <= killSpeedThreshold;
 		}
 
 		void CreateTriangle() 
@@ -240,33 +248,41 @@ public class RiderStateManager : PlayerStateManager
 		void KillInTriangle() 
 		{
 			foreach (RiderStateManager otherRider in MainStateManager.instance.playerStateManagers) {
-				Debug.Log("TRIANGLE KILL");
-				Vector3 q = otherRider.transform.position;
-				Vector3 p0 = triangleVerts[0], p1 = triangleVerts[1], p2 = triangleVerts[2];
-				float triangleArea = 0.5f * ((-p1.y * p2.x) + p0.y * (-p1.x + p2.x) + p0.x * (p1.y - p2.y) + p1.x * p2.y);
-				float s = 1f / (2f * triangleArea) * (p0.y * p2.x - p0.x * p2.y + (p2.y - p0.y) * q.x + (p0.x - p2.x) * q.y);
-				float t = 1f / (2f * triangleArea) * (p0.x * p1.y - p0.y * p1.x + (p0.y - p1.y) * q.x + (p1.x - p0.x) * q.y);
+				if (otherRider != this) {
+					Debug.Log("TRIANGLE KILL");
+					Vector3 q = otherRider.transform.position;
+					Vector3 p0 = triangleVerts[0], p1 = triangleVerts[1], p2 = triangleVerts[2];
+					float triangleArea = 0.5f * ((-p1.y * p2.x) + p0.y * (-p1.x + p2.x) + p0.x * (p1.y - p2.y) + p1.x * p2.y);
+					float s = 1f / (2f * triangleArea) * (p0.y * p2.x - p0.x * p2.y + (p2.y - p0.y) * q.x + (p0.x - p2.x) * q.y);
+					float t = 1f / (2f * triangleArea) * (p0.x * p1.y - p0.y * p1.x + (p0.y - p1.y) * q.x + (p1.x - p0.x) * q.y);
 
-				bool kill = ((s > 0f) && (t > 0f) && (1f-s-t > 0f));
+					bool kill = ((s > 0f) && (t > 0f) && (1f-s-t > 0f));
 
-				if (kill) {
-					otherRider.stateMachine.SwitchStates(deathState);
+					if (kill) {
+						otherRider.Kill();
+					}
 				}
-				//if (otherRider.transform.position )
-				// kill players within triangle
 			}
 		}
 
 	#endregion
 	
+	public void Kill() {
+		stateMachine.SwitchStates(deathState);
+	}
+
 	#region DEATH
 	void DeathEnter ()
 	{
 		Debug.Log("Player " + playerNum + " died");
+		hitPlayers.Clear();
+		allowRide = false;
+		speed = 0f;
 	}
 
 	void DeathUpdate () 
 	{
+		isAlive = false;
 		stateMachine.SwitchStates(finishedState);
 	}
 

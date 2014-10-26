@@ -10,6 +10,8 @@ public class PlayerStateManager : MonoBehaviour
 	public InputController input;
 	public int playerNum = -1;
 	public int actualPlayerNum;
+	
+	public bool isAlive = true;
 
 	public virtual void Start ()
 	{
