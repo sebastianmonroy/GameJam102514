@@ -50,21 +50,31 @@ public class PlayerStateManager : MonoBehaviour
 	}
 	#endregion
 
-	public void AssignPlayer() {
-		if (playerNum > -1) {
+	public bool AssignPlayer() 
+	{
+		if (playerNum > -1) 
+		{
 			actualPlayerNum = FindActualPlayerNum();
-			device = InputManager.Devices[playerNum];
-			Debug.Log((device as UnityInputDevice).Profile);
+			if (actualPlayerNum > -1) {
+				device = InputManager.Devices[playerNum];
+				Debug.Log((device as UnityInputDevice).Profile);
+				return true;
+			}
 		}
-		
+
+		return false;
 	}
 
-	public int FindActualPlayerNum() {
+	public int FindActualPlayerNum() 
+	{
 		int i = 0;
 		int found = 0;
-		while (i < InputManager.Devices.Count) {
-			if ((InputManager.Devices[i] as UnityInputDevice).Profile.IsKnown) {
-				if (found == playerNum) {
+		while (i < InputManager.Devices.Count) 
+		{
+			if ((InputManager.Devices[i] as UnityInputDevice).Profile.IsKnown) 
+			{
+				if (found == playerNum) 
+				{
 					return i;
 				}
 
